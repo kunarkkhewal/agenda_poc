@@ -78,14 +78,16 @@ const sendThrottleJobToQueue = async (message, time) => {
     }
 }
 
-const deleteJobById = async (jobId) => {
+const deleteJobById = async (jobIds) => {
     try {
         // Convert jobId to ObjectId
-        const objectId = new ObjectId(jobId);
-        console.log(' --- objectId => ', objectId)
+        // const objectId = new ObjectId(jobId);
+        const objectIds = jobIds.map(id => new ObjectId(id));
+
+        console.log(' --- objectId => ', objectIds)
 
         // Cancel the job
-        const numRemoved = await agenda.cancel({ _id: objectId });
+        const numRemoved = await agenda.cancel({ _id: {$in: objectIds} });
         console.log(`Number of jobs cancelled: ${numRemoved}`);
 
         // Graceful shutdown
@@ -126,10 +128,11 @@ const deleteJobById = async (jobId) => {
         },
     };
 
-    const jobId = await sendThrottleJobToQueue(message, time)
+    const jobId1 = await sendThrottleJobToQueue(message, time)
+    const jobId2 = await sendThrottleJobToQueue( {message: "bye bye"}, moment().add(2, 'minute').toDate())
 
     setTimeout(async () => {
-        await deleteJobById(jobId)
-    }, 10000)
+        await deleteJobById([jobId1, jobId2])
+    }, 20000)
 })()
 
